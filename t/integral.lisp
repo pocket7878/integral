@@ -93,11 +93,11 @@
 (execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
 (execute-sql (table-definition 'tweet))
 
-;; Add validation
+;; Add presence validation.
 (defmethod insert-dao :around ((obj tweet))
   (if (validate-presence-of obj 'status)
       (call-next-method)
-      (error "Failed to validate")))
+      (error "Failed to validate-presence-of status")))
 
 (let ((tweet (make-instance 'tweet
                             :user "nitro_idiot"))
@@ -109,5 +109,67 @@
   (setf (:tweet-status tweet) "Status yay")
   (ok (insert-dao tweet) "Can insert now"))
 
+;;Add length validation.
+(reconnect-to-testdb)
+
+(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
+(execute-sql (table-definition 'tweet))
+
+(defmethod insert-dao :around ((obj tweet))
+  (if (validate-length-of obj 'status :max 140)
+      (call-next-method)
+      (error "Failed to validate-length-of status")))
+
+
+(let ((tweet (make-instance 'tweet
+                            :status (concatenate 'string "Very l" (make-string 140 :initial-element #\o) "ng")
+                            :user "nitro_idiot"))
+      (tweet2 (make-instance 'tweet
+                             :status "Fuge"
+                             :user "nitro_idiot")))
+  (is-error (insert-dao tweet) 'simple-error)
+  (ok (insert-dao tweet2))
+  (setf (:tweet-status tweet) "Short status.")
+  (ok (insert-dao tweet) "Can insert now"))
+
+;;Add validate-uniqueness
+(reconnect-to-testdb)
+
+(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
+(execute-sql (table-definition 'tweet))
+
+(defmethod insert-dao :around ((obj tweet))
+  (if (validate-uniqueness-of obj 'user)
+      (call-next-method)
+      (error "Failed to validate-uniquness-of user")))
+
+(let ((tweet (make-instance 'tweet
+                            :status "First"
+                            :user "nitro_idiot"))
+      (tweet2 (make-instance 'tweet
+                             :status "Duplicate user name"
+                             :user "nitro_idiot")))
+  (ok (insert-dao tweet))
+  (is-error (insert-dao tweet2) 'simple-error)
+  (setf (:tweet-user tweet) "Hannibal7878")
+  (ok (insert-dao tweet) "Can insert now"))
+
+;;Add validate-formats
+(reconnect-to-testdb)
+
+(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
+(execute-sql (table-definition 'tweet))
+
+(defmethod insert-dao :around ((obj tweet))
+  (if (validate-format-of obj 'user "^[A-Za-z0-9_]{1,15}$")
+      (call-next-method)
+      (error "Failed to validate-format-of user")))
+
+(let ((tweet (make-instance 'tweet
+                            :status "First"
+                            :user "@invalid  username")))
+  (is-error (insert-dao tweet) 'simple-error)
+  (setf (:tweet-user tweet) "Hannibal7878")
+  (ok (insert-dao tweet) "Can insert now"))
 
 (finalize)

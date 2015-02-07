@@ -1,8 +1,13 @@
 (in-package :cl-user)
 (defpackage integral.validation
-  (:use :cl)
+  (:use :cl 
+        :alexandria
+        :sxql)
   (:import-from :integral.table
-                :<dao-class>))
+                :table-name
+                :<dao-class>)
+  (:import-from :integral
+                :retrieve-by-sql))
 
 (in-package integral.validation)
 
@@ -18,10 +23,13 @@
 (defgeneric validate-uniqueness-of (object slot-name)
   (:method ((object <dao-class>) slot-name)
     (let ((val (slot-value object slot-name)))
-      (null (select-sql
-             (select :*
-                     (from (intern (table-name class)))
-                     (where (:= slot-name val))))))))
+      (let* ((select-sql 
+              (select :*
+                      (from (intern (table-name (class-of object))))
+                      (where (:= (make-keyword slot-name) val))))
+             (res 
+              (retrieve-by-sql select-sql :as (class-of object))))
+        (null res)))))
 
 @export
 (defgeneric validate-length-of (object slot-name &key min max is)
