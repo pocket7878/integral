@@ -3,6 +3,11 @@
   (:use :cl
         :sxql
         :iterate)
+  (:import-from :integral.validation
+                :validate-presence-of
+                :validate-uniqueness-of
+                :validate-length-of
+                :validate-format-of)
   (:import-from :integral.table
                 :<dao-table-class>
                 :<dao-class>
@@ -106,6 +111,11 @@
            :date
            :timestamp
 
+           ;;validation
+           :validate-presence-of
+           :validate-uniqueness-of
+           :validate-length-of
+           :validate-format-of
            ;; Errors
            :<integral-error>
            :<connection-not-established-error>
@@ -155,7 +165,7 @@
       (execute-sql (make-insert-sql obj))
       (unless sqlite3-p
         (when-let (pk-value (get-pk-value))
-          (setf (slot-value obj serial-key) pk-value)))
+                  (setf (slot-value obj serial-key) pk-value)))
       (setf (dao-synced obj) T)
       obj)))
 

@@ -88,4 +88,26 @@
 (is-type (find-dao 'tweet 1)
          'tweet)
 
+(reconnect-to-testdb)
+
+(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
+(execute-sql (table-definition 'tweet))
+
+;; Add validation
+(defmethod insert-dao :around ((obj tweet))
+  (if (validate-presence-of obj 'status)
+      (call-next-method)
+      (error "Failed to validate")))
+
+(let ((tweet (make-instance 'tweet
+                            :user "nitro_idiot"))
+      (tweet2 (make-instance 'tweet
+                             :status "Fuge"
+                             :user "nitro_idiot")))
+  (is-error (insert-dao tweet) 'simple-error)
+  (ok (insert-dao tweet2))
+  (setf (:tweet-status tweet) "Status yay")
+  (ok (insert-dao tweet) "Can insert now"))
+
+
 (finalize)
