@@ -6,8 +6,19 @@
   (:import-from :integral.table
                 :table-name
                 :<dao-class>)
-  (:import-from :integral
-                :retrieve-by-sql))
+  (:import-from :integral.connection
+                :*db*
+                :make-connection
+                :get-connection
+                :connect-toplevel
+                :disconnect-toplevel
+                :last-insert-id
+                :database-type
+                :with-quote-char)
+  (:import-from :dbi
+                :prepare
+                :execute
+                :fetch))
 
 (in-package integral.validation)
 
@@ -18,18 +29,6 @@
   (:method ((object <dao-class>) slot-name)
     (and (slot-boundp object slot-name)
      (not (null (slot-value object slot-name))))))
-
-@export
-(defgeneric validate-uniqueness-of (object slot-name)
-  (:method ((object <dao-class>) slot-name)
-    (let ((val (slot-value object slot-name)))
-      (let* ((select-sql 
-              (select :*
-                      (from (intern (table-name (class-of object))))
-                      (where (:= (make-keyword slot-name) val))))
-             (res 
-              (retrieve-by-sql select-sql :as (class-of object))))
-        (null res)))))
 
 @export
 (defgeneric validate-length-of (object slot-name &key min max is)

@@ -130,29 +130,7 @@
   (is-error (insert-dao tweet) 'simple-error)
   (ok (insert-dao tweet2))
   (setf (:tweet-status tweet) "Short status.")
-  (ok (insert-dao tweet) "Can insert now"))
-
-;;Add validate-uniqueness
-(reconnect-to-testdb)
-
-(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
-(execute-sql (table-definition 'tweet))
-
-(defmethod insert-dao :around ((obj tweet))
-  (if (validate-uniqueness-of obj 'user)
-      (call-next-method)
-      (error "Failed to validate-uniquness-of user")))
-
-(let ((tweet (make-instance 'tweet
-                            :status "First"
-                            :user "nitro_idiot"))
-      (tweet2 (make-instance 'tweet
-                             :status "Duplicate user name"
-                             :user "nitro_idiot")))
-  (ok (insert-dao tweet))
-  (is-error (insert-dao tweet2) 'simple-error)
-  (setf (:tweet-user tweet) "Hannibal7878")
-  (ok (insert-dao tweet) "Can insert now"))
+  (ok (insert-dao tweet) "Can insert now with short"))
 
 ;;Add validate-formats
 (reconnect-to-testdb)
@@ -171,5 +149,6 @@
   (is-error (insert-dao tweet) 'simple-error)
   (setf (:tweet-user tweet) "Hannibal7878")
   (ok (insert-dao tweet) "Can insert now"))
+
 
 (finalize)
