@@ -150,5 +150,4 @@
   (setf (:tweet-user tweet) "Hannibal7878")
   (ok (insert-dao tweet) "Can insert now"))
 
-
 (finalize)

@@ -121,6 +121,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
    (table-name :type (proper-list 'string)
                :initarg :table-name
                :initform nil)
+   (validations :type list
+               :initarg :validations)
    (generate-slots :type (proper-list 'boolean)
                    :initarg :generate-slots
                    :initform nil)
