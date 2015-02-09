@@ -34,17 +34,21 @@
 @export
 (defgeneric validate-length-of (object slot-name &key min max is)
   (:method ((object <dao-class>) slot-name &key (min 0) max is)
-    (let ((val (slot-value object slot-name)))
-      (cond (is (= is (length val)))
-            (max
-             (<= min (length val) max))
-            (<= min (length val))))))
+    (if (slot-boundp object slot-name)
+        (let ((val (slot-value object slot-name)))
+          (cond (is (= is (length val)))
+                (max
+                 (<= min (length val) max))
+                (<= min (length val))))
+        t)))
 
 @export
 (defgeneric validate-format-of (object slot-name format)
   (:method ((object <dao-class>) slot-name format)
-    (let ((val (slot-value object slot-name)))
-      (cl-ppcre:all-matches format val))))
+    (if (slot-boundp object slot-name)
+        (let ((val (slot-value object slot-name)))
+          (cl-ppcre:all-matches format val))
+        t)))
 
 (defun generate-validation-function (validation-entry)
   (if (listp validation-entry)
@@ -77,13 +81,12 @@
                    (t
                     (error "Malformed slot-name: ~A" slot-name)))))
           (:fn
-           (let ((fn (car args)))
+           (let ((fn (eval (car args))))
              (cond ((functionp fn)
                     (lambda (obj)
                       (funcall fn obj)))
-                   ((not (functionp fn))
-                    (error "~A is not function" fn)))))))
-      (error "Invalidat validation entry: ~A" validation-entry)))
+                   (t (error "~A is not function" fn)))))))
+      (error "Invalid validation entry: ~A" validation-entry)))
       
 (defun generate-validations-function (validation-list)
   (loop 
@@ -96,13 +99,15 @@
 (defgeneric validation-function (class)
   (:documentation "Generate Validation Function")
   (:method ((class <dao-table-class>))
-    (if (slot-value class 'validations)
-        (generate-validations-function (slot-value class 'validations))
+    (if (and (slot-exists-p class 'integral.table::validations)
+             (slot-boundp class 'integral.table::validations))
+        (generate-validations-function (slot-value class 'integral.table::validations))
         nil)))
   
 @export
 (defgeneric valid-p (object)
   (:method ((obj <dao-class>))
-    (if-let ((validation-fn (validation-function (class-of obj))))
-            (funcall validation-fn obj)
-            t)))
+    (let ((validation-fn (validation-function (class-of obj))))
+      (if validation-fn
+          (funcall validation-fn obj)
+          t))))
